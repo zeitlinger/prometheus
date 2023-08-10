@@ -4722,56 +4722,56 @@ func TestHistogramValidation(t *testing.T) {
 				NegativeSpans:   []histogram.Span{{Offset: 0, Length: 1}},
 				NegativeBuckets: []int64{},
 			},
-			errMsg: `negative side: spans need 1 buckets, have 0 buckets`,
+			errMsg: `negative side: spans need 1 buckets, have 0 buckets: histogram spans specify different number of buckets than provided`,
 		},
 		"rejects histogram who has too few positive buckets": {
 			h: &histogram.Histogram{
 				PositiveSpans:   []histogram.Span{{Offset: 0, Length: 1}},
 				PositiveBuckets: []int64{},
 			},
-			errMsg: `positive side: spans need 1 buckets, have 0 buckets`,
+			errMsg: `positive side: spans need 1 buckets, have 0 buckets: histogram spans specify different number of buckets than provided`,
 		},
 		"rejects histogram who has too many negative buckets": {
 			h: &histogram.Histogram{
 				NegativeSpans:   []histogram.Span{{Offset: 0, Length: 1}},
 				NegativeBuckets: []int64{1, 2},
 			},
-			errMsg: `negative side: spans need 1 buckets, have 2 buckets`,
+			errMsg: `negative side: spans need 1 buckets, have 2 buckets: histogram spans specify different number of buckets than provided`,
 		},
 		"rejects histogram who has too many positive buckets": {
 			h: &histogram.Histogram{
 				PositiveSpans:   []histogram.Span{{Offset: 0, Length: 1}},
 				PositiveBuckets: []int64{1, 2},
 			},
-			errMsg: `positive side: spans need 1 buckets, have 2 buckets`,
+			errMsg: `positive side: spans need 1 buckets, have 2 buckets: histogram spans specify different number of buckets than provided`,
 		},
 		"rejects a histogram which has a negative span with a negative offset": {
 			h: &histogram.Histogram{
 				NegativeSpans:   []histogram.Span{{Offset: -1, Length: 1}, {Offset: -1, Length: 1}},
 				NegativeBuckets: []int64{1, 2},
 			},
-			errMsg: `negative side: span number 2 with offset -1`,
+			errMsg: `negative side: span number 2 with offset -1: histogram has a span whose offset is negative`,
 		},
 		"rejects a histogram which has a positive span with a negative offset": {
 			h: &histogram.Histogram{
 				PositiveSpans:   []histogram.Span{{Offset: -1, Length: 1}, {Offset: -1, Length: 1}},
 				PositiveBuckets: []int64{1, 2},
 			},
-			errMsg: `positive side: span number 2 with offset -1`,
+			errMsg: `positive side: span number 2 with offset -1: histogram has a span whose offset is negative`,
 		},
 		"rejects a histogram which has a negative bucket with a negative count": {
 			h: &histogram.Histogram{
 				NegativeSpans:   []histogram.Span{{Offset: -1, Length: 1}},
 				NegativeBuckets: []int64{-1},
 			},
-			errMsg: `negative side: bucket number 1 has observation count of -1`,
+			errMsg: `negative side: bucket number 1 has observation count of -1: histogram has a bucket whose observation count is negative`,
 		},
 		"rejects a histogram which has a positive bucket with a negative count": {
 			h: &histogram.Histogram{
 				PositiveSpans:   []histogram.Span{{Offset: -1, Length: 1}},
 				PositiveBuckets: []int64{-1},
 			},
-			errMsg: `positive side: bucket number 1 has observation count of -1`,
+			errMsg: `positive side: bucket number 1 has observation count of -1: histogram has a bucket whose observation count is negative`,
 		},
 		"rejects a histogram which which has a lower count than count in buckets": {
 			h: &histogram.Histogram{
@@ -4781,8 +4781,8 @@ func TestHistogramValidation(t *testing.T) {
 				NegativeBuckets: []int64{1},
 				PositiveBuckets: []int64{1},
 			},
-			errMsg:      `2 observations found in buckets, but the Count field is 0`,
-			errMsgFloat: `2.000000 observations found in buckets, but the Count field is 0.000000`,
+			errMsg:      `2 observations found in buckets, but the Count field is 0: histogram's observation count should be at least the number of observations found in the buckets`,
+			errMsgFloat: `2.000000 observations found in buckets, but the Count field is 0.000000: histogram's observation count should be at least the number of observations found in the buckets`,
 		},
 	}
 
@@ -4790,15 +4790,15 @@ func TestHistogramValidation(t *testing.T) {
 		t.Run(testName, func(t *testing.T) {
 			switch err := ValidateHistogram(tc.h); {
 			case tc.errMsg != "":
-				require.ErrorContains(t, err, tc.errMsg)
+				require.EqualError(t, err, tc.errMsg)
 			default:
 				require.NoError(t, err)
 			}
 			switch err := ValidateFloatHistogram(tc.h.ToFloat()); {
 			case tc.errMsgFloat != "":
-				require.ErrorContains(t, err, tc.errMsgFloat)
+				require.EqualError(t, err, tc.errMsgFloat)
 			case tc.errMsg != "":
-				require.ErrorContains(t, err, tc.errMsg)
+				require.EqualError(t, err, tc.errMsg)
 			default:
 				require.NoError(t, err)
 			}
